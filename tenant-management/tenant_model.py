@@ -205,14 +205,14 @@ class TenantDatabase:
         
         payment_id = cursor.lastrowid
         
-        # Update tenant's last payment info
+        conn.commit()
+        conn.close()
+        
+        # Update tenant's last payment info (after closing the connection)
         self.update_tenant(tenant_id, {
             'transaction_number': payment_data.get('transaction_number'),
             'payment_date': payment_data.get('payment_date')
         })
-        
-        conn.commit()
-        conn.close()
         
         return payment_id
     
