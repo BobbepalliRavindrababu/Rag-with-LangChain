@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ qr_type }} QR Code{% endblock %}
+
+{% block content %}
+<h2>📱 {{ qr_type }} QR Code</h2>
+
+<div class="qr-container">
+    <img src="{{ qr_code }}" alt="{{ qr_type }} QR Code">
+    <p style="margin-top: 20px; font-size: 1.2em; color: #666;">{{ description }}</p>
+</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <a href="/" class="btn">🏠 Back to Home</a>
+    <button onclick="window.print()" class="btn">🖨️ Print QR Code</button>
+</div>
+
+<style>
+    @media print {
+        nav, footer, .btn {
+            display: none !important;
+        }
+        .container {
+            box-shadow: none;
+        }
+    }
+</style>
+{% endblock %}

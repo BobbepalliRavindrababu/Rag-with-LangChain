@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Add Payment - Tenant Management{% endblock %}
+
+{% block content %}
+<h2>💰 Add Payment for {{ tenant.name }}</h2>
+
+<div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+    <p><strong>Tenant:</strong> {{ tenant.name }}</p>
+    <p><strong>Room:</strong> {{ tenant.room_no }} | <strong>PG:</strong> {{ tenant.pg_new }}</p>
+</div>
+
+<form method="POST" action="/payment/add/{{ tenant.id }}">
+    <div class="form-group">
+        <label for="payment_month">Payment Month *</label>
+        <input type="month" id="payment_month" name="payment_month" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="amount">Amount (₹) *</label>
+        <input type="number" id="amount" name="amount" step="0.01" required placeholder="5000">
+    </div>
+    
+    <div class="form-group">
+        <label for="transaction_number">Transaction Number *</label>
+        <input type="text" id="transaction_number" name="transaction_number" required placeholder="TXN123456">
+    </div>
+    
+    <div class="form-group">
+        <label for="payment_date">Payment Date *</label>
+        <input type="date" id="payment_date" name="payment_date" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="Any additional information..."></textarea>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <button type="submit" class="btn btn-success">💾 Record Payment</button>
+        <a href="/tenant/{{ tenant.id }}" class="btn">❌ Cancel</a>
+    </div>
+</form>
+
+<script>
+    // Set today's date as default
+    document.getElementById('payment_date').valueAsDate = new Date();
+    
+    // Set current month as default
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    document.getElementById('payment_month').value = `${year}-${month}`;
+</script>
+{% endblock %}

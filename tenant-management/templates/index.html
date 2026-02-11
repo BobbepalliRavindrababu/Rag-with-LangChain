@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Tenant Management{% endblock %}
+
+{% block content %}
+<h2>📊 Dashboard</h2>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>{{ stats.active_tenants }}</h3>
+        <p>Active Tenants</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.active_pgs }}</h3>
+        <p>Active PGs</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.total_payments }}</h3>
+        <p>Total Payments</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ stats.inactive_tenants }}</h3>
+        <p>Past Tenants</p>
+    </div>
+</div>
+
+<h3>Recent Tenants</h3>
+
+{% if tenants %}
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Room No</th>
+            <th>PG</th>
+            <th>Email</th>
+            <th>Last Payment</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tenant in tenants[:10] %}
+        <tr>
+            <td>{{ tenant.name }}</td>
+            <td>{{ tenant.room_no }}</td>
+            <td>{{ tenant.pg_new }}</td>
+            <td>{{ tenant.email }}</td>
+            <td>{{ tenant.payment_date or 'No payment' }}</td>
+            <td>
+                <a href="/tenant/{{ tenant.id }}" class="btn" style="padding: 8px 16px; font-size: 0.9em;">View</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="padding: 20px; text-align: center; color: #666;">No tenants found. Add your first tenant to get started!</p>
+{% endif %}
+
+<div style="margin-top: 30px;">
+    <h3>Quick Actions</h3>
+    <a href="/tenant/add" class="btn btn-success">➕ Add New Tenant</a>
+    <a href="/qr/onboarding" class="btn">📱 Generate Onboarding QR</a>
+    <form action="/emails/send-reminders" method="POST" style="display: inline;">
+        <button type="submit" class="btn btn-warning">📧 Send Payment Reminders</button>
+    </form>
+</div>
+{% endblock %}

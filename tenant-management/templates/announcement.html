@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Send Announcement - Tenant Management{% endblock %}
+
+{% block content %}
+<h2>📧 Send Bulk Announcement</h2>
+
+<div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+    <p><strong>ℹ️ Note:</strong> This will send an email to all {{ tenant_count }} active tenants.</p>
+</div>
+
+<form method="POST" action="/emails/announcement">
+    <div class="form-group">
+        <label for="subject">Email Subject *</label>
+        <input type="text" id="subject" name="subject" required placeholder="Important Announcement">
+    </div>
+    
+    <div class="form-group">
+        <label for="message">Message *</label>
+        <textarea id="message" name="message" rows="10" required placeholder="Enter your message here..."></textarea>
+    </div>
+    
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Recipients:</strong> {{ tenant_count }} active tenants</p>
+        <p style="margin-top: 10px; color: #666; font-size: 0.9em;">The email will be sent to all tenants currently marked as active in the system.</p>
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to send this announcement to all tenants?');">
+            📧 Send to All Tenants
+        </button>
+        <a href="/" class="btn">❌ Cancel</a>
+    </div>
+</form>
+{% endblock %}

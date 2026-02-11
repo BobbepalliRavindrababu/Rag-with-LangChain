@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tenant.name }} - Tenant Details{% endblock %}
+
+{% block content %}
+<h2>👤 Tenant Details</h2>
+
+<div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+    <h3 style="margin-bottom: 15px;">{{ tenant.name }}</h3>
+    
+    <table style="box-shadow: none;">
+        <tr>
+            <td style="font-weight: bold; width: 200px;">Room Number:</td>
+            <td>{{ tenant.room_no }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Current PG:</td>
+            <td>{{ tenant.pg_new }}</td>
+        </tr>
+        {% if tenant.pg_old %}
+        <tr>
+            <td style="font-weight: bold;">Previous PG:</td>
+            <td>{{ tenant.pg_old }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="font-weight: bold;">Email:</td>
+            <td>{{ tenant.email }}</td>
+        </tr>
+        {% if tenant.phone %}
+        <tr>
+            <td style="font-weight: bold;">Phone:</td>
+            <td>{{ tenant.phone }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="font-weight: bold;">Joining Date:</td>
+            <td>{{ tenant.joining_date }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Last Payment Date:</td>
+            <td>{{ tenant.payment_date or 'No payment recorded' }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Last Transaction:</td>
+            <td>{{ tenant.transaction_number or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold;">Status:</td>
+            <td>
+                {% if tenant.is_active %}
+                <span style="color: green; font-weight: bold;">✓ Active</span>
+                {% else %}
+                <span style="color: red; font-weight: bold;">✗ Inactive</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h3>Actions</h3>
+    <a href="/payment/add/{{ tenant.id }}" class="btn btn-success">💰 Add Payment</a>
+    <a href="/tenant/update/{{ tenant.id }}" class="btn">✏️ Edit Details</a>
+    <a href="/qr/checkout/{{ tenant.id }}" class="btn">📱 Generate Checkout QR</a>
+    {% if tenant.is_active %}
+    <form action="/tenant/delete/{{ tenant.id }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to remove this tenant?');">
+        <button type="submit" class="btn btn-danger">🗑️ Remove Tenant</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if payment_history %}
+<h3>💳 Payment History</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Payment Month</th>
+            <th>Amount</th>
+            <th>Transaction Number</th>
+            <th>Payment Date</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for payment in payment_history %}
+        <tr>
+            <td>{{ payment.payment_month }}</td>
+            <td>₹{{ payment.amount }}</td>
+            <td>{{ payment.transaction_number }}</td>
+            <td>{{ payment.payment_date }}</td>
+            <td>{{ payment.notes or '-' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="padding: 20px; text-align: center; color: #666;">No payment history available.</p>
+{% endif %}
+
+<div style="margin-top: 30px;">
+    <h3>🔲 Checkout QR Code</h3>
+    <div class="qr-container">
+        <img src="{{ checkout_qr }}" alt="Checkout QR Code">
+        <p style="margin-top: 15px; color: #666;">Scan this QR code to checkout {{ tenant.name }}</p>
+    </div>
+</div>
+{% endblock %}

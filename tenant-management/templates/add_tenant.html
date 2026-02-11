@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Add Tenant - Tenant Management{% endblock %}
+
+{% block content %}
+<h2>➕ Add New Tenant</h2>
+
+<form method="POST" action="/tenant/add">
+    <div class="form-group">
+        <label for="name">Full Name *</label>
+        <input type="text" id="name" name="name" required placeholder="Enter tenant name">
+    </div>
+    
+    <div class="form-group">
+        <label for="room_no">Room Number *</label>
+        <input type="text" id="room_no" name="room_no" required placeholder="e.g., 101, 202">
+    </div>
+    
+    <div class="form-group">
+        <label for="pg_old">Previous PG (if any)</label>
+        <input type="text" id="pg_old" name="pg_old" placeholder="Previous PG name">
+    </div>
+    
+    <div class="form-group">
+        <label for="pg_new">Current PG *</label>
+        <input type="text" id="pg_new" name="pg_new" required placeholder="e.g., Sunrise PG, Metro PG">
+    </div>
+    
+    <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required placeholder="tenant@example.com">
+    </div>
+    
+    <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" placeholder="+91-XXXXXXXXXX">
+    </div>
+    
+    <div class="form-group">
+        <label for="joining_date">Joining Date *</label>
+        <input type="date" id="joining_date" name="joining_date" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="transaction_number">Initial Transaction Number (if paid)</label>
+        <input type="text" id="transaction_number" name="transaction_number" placeholder="TXN123456">
+    </div>
+    
+    <div class="form-group">
+        <label for="payment_date">Initial Payment Date (if paid)</label>
+        <input type="date" id="payment_date" name="payment_date">
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <button type="submit" class="btn btn-success">💾 Add Tenant</button>
+        <a href="/" class="btn">❌ Cancel</a>
+    </div>
+</form>
+
+<script>
+    // Set today's date as default for joining date
+    document.getElementById('joining_date').valueAsDate = new Date();
+</script>
+{% endblock %}
