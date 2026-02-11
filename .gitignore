@@ -45,3 +45,20 @@ sample_documents/
 
 # Logs
 *.log
+logs/
+
+# Tenant Management System
+# Sensitive configuration
+.env
+*.env
+!.env.example
+
+# Database (optional - comment out if you want to track it)
+# tenant-management/data/tenants.db
+
+# Backups
+tenant-management/backups/
+
+# Generated QR codes (optional)
+# tenant-management/static/qrcodes/*.png
+
