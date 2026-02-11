@@ -2,8 +2,20 @@
 Voice Assistant Module
 Provides speech-to-text and text-to-speech capabilities
 """
-import speech_recognition as sr
-import pyttsx3
+try:
+    import speech_recognition as sr
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+    sr = None
+
+try:
+    import pyttsx3
+    PYTTSX3_AVAILABLE = True
+except ImportError:
+    PYTTSX3_AVAILABLE = False
+    pyttsx3 = None
+
 import threading
 import queue
 
@@ -19,11 +31,31 @@ class VoiceAssistant:
             rate: Speech rate (words per minute)
             volume: Volume level (0.0 to 1.0)
         """
+        if not SPEECH_RECOGNITION_AVAILABLE:
+            raise ImportError(
+                "SpeechRecognition is not installed. "
+                "Install with: pip install SpeechRecognition"
+            )
+        
+        if not PYTTSX3_AVAILABLE:
+            raise ImportError(
+                "pyttsx3 is not installed. "
+                "Install with: pip install pyttsx3"
+            )
+        
         print("🎤 Initializing Voice Assistant...")
         
         # Initialize speech recognizer
         self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
+        
+        # Try to initialize microphone (may fail if PyAudio not installed)
+        try:
+            self.microphone = sr.Microphone()
+        except AttributeError as e:
+            raise ImportError(
+                "PyAudio is not installed. "
+                "See QUICKSTART_VOICE.md for platform-specific installation instructions."
+            ) from e
         
         # Initialize text-to-speech engine
         self.tts_engine = pyttsx3.init()
@@ -192,16 +224,36 @@ if __name__ == "__main__":
     print("🎤 Voice Assistant Test")
     print("=" * 60)
     
-    # Initialize voice assistant
-    va = VoiceAssistant()
+    # Check if dependencies are available
+    if not SPEECH_RECOGNITION_AVAILABLE:
+        print("❌ SpeechRecognition not installed")
+        print("   Install with: pip install SpeechRecognition")
+        exit(1)
     
-    # List available voices
-    va.list_available_voices()
+    if not PYTTSX3_AVAILABLE:
+        print("❌ pyttsx3 not installed")
+        print("   Install with: pip install pyttsx3")
+        exit(1)
     
-    # Test microphone
-    print("\nTesting microphone...")
-    va.test_microphone()
-    
-    # Cleanup
-    va.stop()
-    print("\n✓ Test complete")
+    try:
+        # Initialize voice assistant
+        va = VoiceAssistant()
+        
+        # List available voices
+        va.list_available_voices()
+        
+        # Test microphone
+        print("\nTesting microphone...")
+        va.test_microphone()
+        
+        # Cleanup
+        va.stop()
+        print("\n✓ Test complete")
+        
+    except ImportError as e:
+        print(f"\n❌ Import Error: {e}")
+        print("\nSee QUICKSTART_VOICE.md for installation instructions.")
+        exit(1)
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        exit(1)
