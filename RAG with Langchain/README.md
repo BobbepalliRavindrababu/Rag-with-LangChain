@@ -9,6 +9,7 @@ A Retrieval-Augmented Generation system that answers questions from uploaded doc
 - 📝 Extractive answer generation (no LLM hallucinations)
 - ⚡ Fast retrieval with FAISS indexing
 - 🎯 Relevant chunk highlighting with similarity scores
+- 🎤 **NEW: Voice Assistant** - Ask questions using your voice and receive spoken answers!
 
 ## Supported Document Formats
 
@@ -42,6 +43,8 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Text-based Interface (CLI)
+
 ```bash
 python main.py
 ```
@@ -51,6 +54,30 @@ Then:
 2. Ask questions
 3. Get extractive answers from your documents
 
+### Voice Assistant (NEW! 🎤)
+
+Interact with your documents using voice:
+
+```bash
+python voice_app.py
+```
+
+- Speak your questions naturally
+- Get answers via text-to-speech
+- Hands-free document querying
+
+**Quick Start**: See [QUICKSTART_VOICE.md](QUICKSTART_VOICE.md) for setup instructions.
+
+**Full Documentation**: See [README_VOICE_ASSISTANT.md](README_VOICE_ASSISTANT.md) for detailed voice assistant documentation.
+
+### Web Interface (Streamlit)
+
+```bash
+streamlit run app.py
+```
+
+Then open your browser to interact with the system via a web UI.
+
 ## Architecture
 
 - `document_processor.py`: Multi-format document parsing (PDF, DOCX, CSV, JSON, Excel, PowerPoint, HTML, Markdown, TXT)
@@ -59,6 +86,9 @@ Then:
 - `retriever.py`: Similarity search
 - `answer_generator.py`: Extractive answer construction
 - `main.py`: CLI interface
+- `app.py`: Streamlit web interface
+- `voice_assistant.py`: Voice recognition and text-to-speech (NEW)
+- `voice_app.py`: Voice-enabled RAG application (NEW)
 
 ## Example
 

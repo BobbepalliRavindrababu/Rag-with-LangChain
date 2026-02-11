@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Tenants - Tenant Management{% endblock %}
+
+{% block content %}
+<h2>👥 All Tenants</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/tenants?active=true" class="btn {{ 'btn-success' if active_only else '' }}">Active Tenants</a>
+    <a href="/tenants?active=false" class="btn {{ 'btn-warning' if not active_only else '' }}">All Tenants</a>
+</div>
+
+{% if tenants %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Room No</th>
+            <th>PG</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Last Payment</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tenant in tenants %}
+        <tr>
+            <td>{{ tenant.id }}</td>
+            <td>{{ tenant.name }}</td>
+            <td>{{ tenant.room_no }}</td>
+            <td>{{ tenant.pg_new }}</td>
+            <td>{{ tenant.email }}</td>
+            <td>{{ tenant.phone or 'N/A' }}</td>
+            <td>{{ tenant.payment_date or 'No payment' }}</td>
+            <td>
+                {% if tenant.is_active %}
+                <span style="color: green; font-weight: bold;">✓ Active</span>
+                {% else %}
+                <span style="color: red; font-weight: bold;">✗ Inactive</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/tenant/{{ tenant.id }}" class="btn" style="padding: 6px 12px; font-size: 0.85em;">View</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p style="padding: 40px; text-align: center; color: #666; font-size: 1.2em;">
+    No tenants found.
+</p>
+{% endif %}
+{% endblock %}
