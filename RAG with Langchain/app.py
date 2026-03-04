@@ -2,6 +2,7 @@
 RAG Document Q&A System - Web UI
 Streamlit application with file upload and question answering
 """
+import re
 import streamlit as st
 import os
 import tempfile
@@ -264,99 +265,185 @@ with st.sidebar:
     show_chunks = st.checkbox("Show retrieved chunks", value=True)
     show_scores = st.checkbox("Show similarity scores", value=True)
 
+FLOW_DIAGRAM_HTML = """
+<div class="mermaid">
+flowchart TD
+    A([👤 User]) -->|Upload documents| B[DocumentProcessor]
+    B --> C{File type?}
+    C -->|.pdf| D[PyPDF2 extractor]
+    C -->|.docx| E[python-docx extractor]
+    C -->|.txt| F[Plain text reader]
+    C -->|.csv / .json / .xlsx| G[Pandas / json parser]
+    C -->|.html / .md / .pptx| H[BeautifulSoup / pptx parser]
+    D & E & F & G & H --> I[Raw text content]
+
+    I --> J[TextChunker<br/>chunk_size=500, overlap=100]
+    J --> K[Overlapping text chunks]
+
+    K --> L[VectorStore<br/>all-MiniLM-L6-v2]
+    L --> M[Sentence embeddings<br/>384 dimensions]
+    M --> N[(FAISS Index<br/>cosine similarity)]
+
+    A -->|Ask a question| O[Query text]
+    O --> P[Encode query embedding]
+    P --> Q[Search FAISS Index<br/>top-k nearest neighbours]
+    N --> Q
+    Q --> R[Retrieved chunks<br/>with similarity scores]
+
+    R --> S[AnswerGenerator]
+    S --> T{Query type?}
+    T -->|what is / define| U[Definition extraction<br/>TF-IDF sentence ranking]
+    T -->|when / who / where| V[Factual extraction<br/>TF-IDF sentence ranking]
+    T -->|general| W[Multi-chunk extraction<br/>combine top chunks]
+    U & V & W --> X[Answer + Confidence + Sources]
+
+    X --> Y([💬 Display to User])
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>
+"""
+
+
+def _highlight_keywords(text: str, query: str) -> str:
+    """Wrap query keywords in <mark> tags for highlighting (single-pass regex)."""
+    stopwords = {'what', 'is', 'are', 'the', 'a', 'an', 'and', 'or', 'but',
+                 'in', 'on', 'at', 'to', 'for', 'of', 'how', 'why', 'when',
+                 'where', 'who', 'which', 'do', 'does', 'did', 'can', 'could'}
+    words = [re.escape(w) for w in re.findall(r'\b\w+\b', query.lower())
+             if w not in stopwords and len(w) > 2]
+    if not words:
+        return text
+    pattern = re.compile(r'(?i)\b(' + '|'.join(words) + r')\b')
+    return pattern.sub(r'<mark style="background-color:#fff176;">\1</mark>', text)
+
+
 # Main content area
 if st.session_state.is_ready:
-    st.header("💬 Ask Questions")
-    
-    # Question input
-    question = st.text_input(
-        "Enter your question:",
-        placeholder="What is the main topic of the documents?",
-        key="question_input"
-    )
-    
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        ask_button = st.button("🔍 Ask", type="primary")
-    with col2:
-        clear_button = st.button("🗑️ Clear History")
-    
-    if clear_button:
-        st.session_state.chat_history = []
-        st.rerun()
-    
-    if ask_button and question:
-        result = ask_question(question, top_k=top_k)
-        
-        if result:
-            # Add to chat history
-            st.session_state.chat_history.append({
-                'question': question,
-                'result': result
-            })
-    
-    # Display chat history
-    if st.session_state.chat_history:
-        st.divider()
-        st.header("📝 Q&A History")
-        
-        for i, item in enumerate(reversed(st.session_state.chat_history)):
-            with st.container():
-                st.subheader(f"❓ {item['question']}")
-                
-                answer_dict = item['result']['answer']
-                
-                # Display answer
-                st.markdown(f"""
-                <div class="answer-box">
-                    <strong>💡 Answer:</strong><br>
-                    {answer_dict['answer']}
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Display metadata
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Confidence", f"{answer_dict['confidence']:.2%}")
-                with col2:
-                    st.metric("Sources", len(answer_dict['sources']))
-                with col3:
-                    st.metric("Method", answer_dict['method'])
-                
-                # Show retrieved chunks if enabled
-                if show_chunks:
-                    with st.expander(f"📄 Retrieved Chunks ({len(item['result']['chunks'])})"):
-                        for j, chunk in enumerate(item['result']['chunks'], 1):
-                            score_text = f" (similarity: {chunk['score']:.3f})" if show_scores else ""
-                            st.markdown(f"""
-                            <div class="chunk-box">
-                                <strong>Chunk {j}</strong> - <em>{chunk['source']}</em>{score_text}<br>
-                                {chunk['text'][:300]}{'...' if len(chunk['text']) > 300 else ''}
-                            </div>
-                            """, unsafe_allow_html=True)
-                
-                if i < len(st.session_state.chat_history) - 1:
-                    st.divider()
+    tab_qa, tab_flow = st.tabs(["💬 Ask Questions", "🗺️ System Flow"])
+
+    with tab_flow:
+        st.header("🗺️ RAG System Flow Diagram")
+        st.markdown(
+            "This diagram shows how your documents are processed and how questions are answered.",
+            unsafe_allow_html=False,
+        )
+        st.components.v1.html(FLOW_DIAGRAM_HTML, height=700, scrolling=True)
+
+    with tab_qa:
+        st.header("💬 Ask Questions")
+
+        # Question input
+        question = st.text_input(
+            "Enter your question:",
+            placeholder="What is the main topic of the documents?",
+            key="question_input"
+        )
+
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            ask_button = st.button("🔍 Ask", type="primary")
+        with col2:
+            clear_button = st.button("🗑️ Clear History")
+
+        if clear_button:
+            st.session_state.chat_history = []
+            st.rerun()
+
+        if ask_button and question:
+            result = ask_question(question, top_k=top_k)
+
+            if result:
+                # Add to chat history
+                st.session_state.chat_history.append({
+                    'question': question,
+                    'result': result
+                })
+
+        # Display chat history
+        if st.session_state.chat_history:
+            st.divider()
+            st.header("📝 Q&A History")
+
+            for i, item in enumerate(reversed(st.session_state.chat_history)):
+                with st.container():
+                    st.subheader(f"❓ {item['question']}")
+
+                    answer_dict = item['result']['answer']
+
+                    # Display answer
+                    st.markdown(f"""
+                    <div class="answer-box">
+                        <strong>💡 Answer:</strong><br>
+                        {answer_dict['answer']}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # Display metadata
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Confidence", f"{answer_dict['confidence']:.2%}")
+                    with col2:
+                        st.metric("Sources", len(answer_dict['sources']))
+                    with col3:
+                        st.metric("Method", answer_dict['method'])
+
+                    # Show retrieved chunks if enabled
+                    if show_chunks:
+                        with st.expander(f"📄 Retrieved Chunks ({len(item['result']['chunks'])})"):
+                            for j, chunk in enumerate(item['result']['chunks'], 1):
+                                score_text = f" (similarity: {chunk['score']:.3f})" if show_scores else ""
+                                chunk_full = chunk['text']
+                                if len(chunk_full) > 300:
+                                    # Truncate at word boundary before highlighting
+                                    cutoff = chunk_full.rfind(' ', 0, 300)
+                                    cutoff = cutoff if cutoff > 0 else 300
+                                    truncated = chunk_full[:cutoff] + '...'
+                                else:
+                                    truncated = chunk_full
+                                highlighted_preview = _highlight_keywords(truncated, item['question'])
+                                st.markdown(f"""
+                                <div class="chunk-box">
+                                    <strong>Chunk {j}</strong> - <em>{chunk['source']}</em>{score_text}<br>
+                                    {highlighted_preview}
+                                </div>
+                                """, unsafe_allow_html=True)
+
+                    if i < len(st.session_state.chat_history) - 1:
+                        st.divider()
 
 else:
-    # Welcome screen
-    st.info("👈 Upload documents using the sidebar to get started!")
-    
-    st.markdown("""
-    ### How to use:
-    
-    1. **Upload Documents** - Click the file uploader in the sidebar and select your documents
-    2. **Process** - Click the "Process Documents" button to analyze your files
-    3. **Ask Questions** - Once processed, enter your questions in the text box
-    4. **Get Answers** - Receive extractive answers based on your documents
-    
-    ### Features:
-    
-    - ✅ **No LLM hallucinations** - Answers are extracted directly from your documents
-    - ✅ **Multi-format support** - PDF, Word, Excel, PowerPoint, and more
-    - ✅ **Fast semantic search** - Uses vector similarity for accurate retrieval
-    - ✅ **Source tracking** - See exactly where answers come from
-    """)
+    # Welcome screen — show the flow diagram alongside the "how to use" guide
+    tab_welcome, tab_flow = st.tabs(["🏠 Welcome", "🗺️ System Flow"])
+
+    with tab_flow:
+        st.header("🗺️ RAG System Flow Diagram")
+        st.markdown(
+            "This diagram shows how your documents are processed and how questions are answered.",
+            unsafe_allow_html=False,
+        )
+        st.components.v1.html(FLOW_DIAGRAM_HTML, height=700, scrolling=True)
+
+    with tab_welcome:
+        st.info("👈 Upload documents using the sidebar to get started!")
+
+        st.markdown("""
+        ### How to use:
+
+        1. **Upload Documents** - Click the file uploader in the sidebar and select your documents
+        2. **Process** - Click the "Process Documents" button to analyze your files
+        3. **Ask Questions** - Once processed, enter your questions in the text box
+        4. **Get Answers** - Receive extractive answers based on your documents
+
+        ### Features:
+
+        - ✅ **No LLM hallucinations** - Answers are extracted directly from your documents
+        - ✅ **Multi-format support** - PDF, Word, Excel, PowerPoint, and more
+        - ✅ **Fast semantic search** - Uses vector similarity for accurate retrieval
+        - ✅ **Source tracking** - See exactly where answers come from
+        - ✅ **Flow diagram** - See the "System Flow" tab for a visual overview of the pipeline
+        """)
 
 # Footer
 st.divider()

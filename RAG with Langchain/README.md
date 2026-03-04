@@ -34,6 +34,42 @@ A Retrieval-Augmented Generation system that answers questions from uploaded doc
 6. **Retrieval**: System finds most similar chunks via cosine similarity
 7. **Answer Construction**: Extractive methods combine retrieved chunks into an answer
 
+## System Flow Diagram
+
+```mermaid
+flowchart TD
+    A([👤 User]) -->|Upload documents| B[DocumentProcessor]
+    B --> C{File type?}
+    C -->|.pdf| D[PyPDF2 extractor]
+    C -->|.docx| E[python-docx extractor]
+    C -->|.txt| F[Plain text reader]
+    C -->|.csv / .json / .xlsx| G[Pandas / json parser]
+    C -->|.html / .md / .pptx| H[BeautifulSoup / pptx parser]
+    D & E & F & G & H --> I[Raw text content]
+
+    I --> J[TextChunker\nchunk_size=500, overlap=100]
+    J --> K[Overlapping text chunks]
+
+    K --> L[VectorStore\nall-MiniLM-L6-v2]
+    L --> M[Sentence embeddings\n384 dimensions]
+    M --> N[(FAISS Index\ncosine similarity)]
+
+    A -->|Ask a question| O[Query text]
+    O --> P[Encode query embedding]
+    P --> Q[Search FAISS Index\ntop-k nearest neighbours]
+    N --> Q
+    Q --> R[Retrieved chunks\nwith similarity scores]
+
+    R --> S[AnswerGenerator]
+    S --> T{Query type?}
+    T -->|what is / define| U[Definition extraction\nTF-IDF sentence ranking]
+    T -->|when / who / where| V[Factual extraction\nTF-IDF sentence ranking]
+    T -->|general| W[Multi-chunk extraction\ncombine top chunks]
+    U & V & W --> X[Answer + Confidence + Sources]
+
+    X --> Y([💬 Display to User])
+```
+
 ## Installation
 
 ```bash
